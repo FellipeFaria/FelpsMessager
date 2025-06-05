@@ -5,7 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "resetDB": "node database/db.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
