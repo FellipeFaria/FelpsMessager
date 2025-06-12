@@ -14,6 +14,20 @@ const UserController = {
     });
   },
 
+  getUserById: (req, res) => {
+    const query =
+      "SELECT ID_USUARIO, NOME, EMAIL FROM usuario WHERE ID_USUARIO = ?";
+
+    db.query(query, [req.params.userId], (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Erro interno no servidor" });
+      }
+
+      return res.status(200).json(data);
+    });
+  },
+
   addUser: async (req, res) => {
     const { nome, email, senha } = req.body;
 
