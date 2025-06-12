@@ -2,10 +2,8 @@ import db from "./connection.js";
 
 async function criarTabelas() {
   try {
-    // Desativa o autocommit para trabalhar com transações
     await db.query("SET autocommit = 0");
 
-    // Inicia a transação manualmente
     await db.query("START TRANSACTION");
 
     const sql = `
@@ -44,22 +42,18 @@ async function criarTabelas() {
 
     await db.query(sql);
 
-    // Confirma a transação
     await db.query("COMMIT");
     console.log("Banco resetado com sucesso");
   } catch (e) {
-    // Reverte em caso de erro
     await db.query("ROLLBACK");
     console.error("Erro ao resetar o banco: ", e);
     process.exit(1);
   } finally {
-    // Reativa o autocommit
     await db.query("SET autocommit = 1");
     await db.end();
   }
 }
 
-// Executa a função
 criarTabelas()
   .then(() => process.exit(0))
   .catch(() => process.exit(1));
