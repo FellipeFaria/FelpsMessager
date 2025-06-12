@@ -2,43 +2,64 @@ import db from "./connection.js";
 
 async function criarTabelas() {
   try {
+    // Desativa o autocommit para trabalhar com transações
+    await db.query("SET autocommit = 0");
+
+    // Inicia a transação manualmente
+    await db.query("START TRANSACTION");
+
     const sql = `
-      drop table if exists conversa;
-      drop table if exists mensagem;
-      drop table if exists usuario;
+      DROP TABLE IF EXISTS mensagem;
+      DROP TABLE IF EXISTS conversa;
+      DROP TABLE IF EXISTS usuario;
 
-      create table usuario (
-        ID_USUARIO int primary key auto_increment,
-        NOME varchar(50) not null,
-        EMAIL varchar(255) not null unique,
-        SENHA varchar(16) not null
-      ) engine=innodb default charset=latin1;
+      CREATE TABLE usuario (
+        ID_USUARIO INT PRIMARY KEY AUTO_INCREMENT,
+        NOME VARCHAR(50) NOT NULL,
+        EMAIL VARCHAR(255) NOT NULL UNIQUE,
+        SENHA VARCHAR(255) NOT NULL,
+        DATA_CRIACAO TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-      create table conversa (
-        ID_CONVERSA int primary key auto_increment,
-        ID_USUARIO1 int,
-        ID_USUARIO2 int,
-        DATA_CRIACAO timestamp,
-        foreign key (ID_USUARIO1) references usuario(ID_USUARIO),
-        foreign key (ID_USUARIO2) references usuario(ID_USUARIO)
-      ) engine=innodb default charset=latin1;
+      CREATE TABLE conversa (
+        ID_CONVERSA INT PRIMARY KEY AUTO_INCREMENT,
+        ID_USUARIO1 INT,
+        ID_USUARIO2 INT,
+        DATA_CRIACAO TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ID_USUARIO1) REFERENCES usuario(ID_USUARIO) ON DELETE CASCADE,
+        FOREIGN KEY (ID_USUARIO2) REFERENCES usuario(ID_USUARIO) ON DELETE CASCADE,
+        UNIQUE KEY unique_conversa (ID_USUARIO1, ID_USUARIO2)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-      create table mensagem (
-        ID_MENSAGEM int primary key auto_increment,
-        CONTEUDO text not null,
-        HORA_ENVIO time default current_time(),
-        ID_CONVERSA int,
-        ID_USUARIO int, 
-        foreign key (ID_CONVERSA) references conversa(ID_CONVERSA),
-        foreign key (ID_USUARIO) references usuario(ID_USUARIO)
-      ) engine=innodb default charset=latin1;
+      CREATE TABLE mensagem (
+        ID_MENSAGEM INT PRIMARY KEY AUTO_INCREMENT,
+        CONTEUDO TEXT NOT NULL,
+        DATA_ENVIO DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ID_CONVERSA INT,
+        ID_USUARIO INT,
+        FOREIGN KEY (ID_CONVERSA) REFERENCES conversa(ID_CONVERSA) ON DELETE CASCADE,
+        FOREIGN KEY (ID_USUARIO) REFERENCES usuario(ID_USUARIO) ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `;
 
-    db.query(sql);
+    await db.query(sql);
+
+    // Confirma a transação
+    await db.query("COMMIT");
     console.log("Banco resetado com sucesso");
   } catch (e) {
-    console.log("Erro ao reseta o banco: ", e.message);
+    // Reverte em caso de erro
+    await db.query("ROLLBACK");
+    console.error("Erro ao resetar o banco: ", e);
+    process.exit(1);
+  } finally {
+    // Reativa o autocommit
+    await db.query("SET autocommit = 1");
+    await db.end();
   }
 }
 
-criarTabelas();
+// Executa a função
+criarTabelas()
+  .then(() => process.exit(0))
+  .catch(() => process.exit(1));
