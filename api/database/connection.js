@@ -1,9 +1,9 @@
-import mysql from "mysql";
+import mysql from "mysql2/promise"; // ✅ Use mysql2/promise
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const db = mysql.createPool({
+const db = await mysql.createPool({
   host: process.env.HOST,
   user: process.env.USER,
   password: process.env.PASSWORD,
